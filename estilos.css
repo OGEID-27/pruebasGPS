@@ -19,3 +19,27 @@ body {
     font-size: 13px;
     text-align: center;
 }
+
+#boton_geo {
+    width: 50%;
+    height: 50px;
+    border-radius: 5px;
+    border: 2px;
+    background-color: rgb(41, 111, 233);
+    color: rgb(0, 0, 0);
+    padding: 10px;
+    font-size: 20px;
+    font-family: Arial, Helvetica, sans-serif;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+#boton_geo:hover {
+    background-color: blue;
+}
+
+.botones {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}

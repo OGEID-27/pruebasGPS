@@ -1,44 +1,64 @@
 // Seleccionamos los iconos del DOM
 var coordenadas = document.getElementById('coordenadas');
 var tiempo_actu = document.getElementById('tiempo_actu');
+var boton_geo = document.getElementById('boton_geo')
 
 // Crea el mapa
 var map = L.map('map').setView([19.2907, -99.2141], 10);
 
 // Crea la ubicacion usando OPENSTREETMAP
 L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 18,
+    maxZoom: 16,
     attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
 }).addTo(map);
 
+
+// Variables para el intervalo
+var actualizarMapa;
+// Variable para controlar la obtención de coordenadas
+var obteniendoCoordenadas = false;
 // Segundos 
 var tiempo = 5000
-
-// Creamos el contador
-var contador = 0
-/* USO DE LA API DE GEOLOCALIZACION DE HTML5 ------ PARA ALGUNOS NAVEGADORES NO ESTA DISPONIBLE ESTA API*/
-if (!navigator.geolocation) { // Creamos la condicional para saber si el navegador acepta la API
-    console.log('Tu navegador no tiene geolocalizacion disponible')
-} else {
-    // Creamos esta funcion para que se repita la funcion "obtenerPosicion" cada cierto tiempo
-    var actualizarMapa = setInterval(() => {
-        contador++ // Aumentamos el contador para que asi la funcion no se repita mas de 12 veces
-        navigator.geolocation.getCurrentPosition(obtenerPosicion)
-        if (contador >= 36) {
-            clearInterval(actualizarMapa);// Aparamos la funcion "actualizarMapa"
-        }
-    }, tiempo);
-}
 
 // Variables para los marcadores
 var circulo
 var previo_marker = null
 var linea = null
 
-function obtenerPosicion(posicion) {
-    console.log('CONTADOR: ' + contador)
+// USO DE LA API DE GEOLOCALIZACION DE HTML5 ------ PARA ALGUNOS NAVEGADORES NO ESTA DISPONIBLE ESTA API
+if (!navigator.geolocation) { // Creamos la condicional para saber si el navegador acepta la API
+    console.log('Tu navegador no tiene geolocalizacion disponible')
+    boton_geo.disabled = true;
+}
 
-    //console.log(posicion)
+
+// Función para iniciar/detener la obtención de coordenadas
+function alternarObtencionCoordenadas() {
+    if (obteniendoCoordenadas) {
+        // Si ya se están obteniendo las coordenadas, detenerlo
+        clearInterval(actualizarMapa);
+
+        obteniendoCoordenadas = false;
+        boton_geo.textContent = 'Obtener Coordenadas'; // Cambiar el texto del botón
+        boton_geo.style.backgroundColor = 'rgb(41, 111, 233)' // Cambiar el color del boton
+
+    } else {
+        // Funcion que actualiza la ubucacion cada cierto tiempo
+        actualizarMapa = setInterval(() => {
+            navigator.geolocation.getCurrentPosition(obtenerPosicion)
+        }, tiempo);
+
+        obteniendoCoordenadas = true;
+        boton_geo.textContent = 'Detener Coordenadas'; // Cambiar el texto del botón
+        boton_geo.style.backgroundColor = 'rgb(233, 41, 89)' // Cambiar el color del boton
+    }
+}
+
+// Agregar un event listener al botón para alternar la obtención de coordenadas
+boton_geo.addEventListener("click", alternarObtencionCoordenadas);
+
+
+function obtenerPosicion(posicion) {
 
     // Obtenemos latitud, longitud y exactud del dispositivo mediante el Navegador
     latitud = posicion.coords.latitude
@@ -71,8 +91,8 @@ function obtenerPosicion(posicion) {
 
     // Imprimimos las Coordenadas en pantalla
     coordenadas.textContent = 'Latitud: ' + latitud + ', ' + 'Longitud: ' + longitid + ', ' + 'Exactitud: ' + exactitud
-    tiempo_actu.textContent = 'Tiempo de actualizacion cada ' + tiempo / 1000 + ' segundos... ' + 'Contador: ' + contador
 
 }
+
 
 
