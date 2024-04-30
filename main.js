@@ -1,7 +1,8 @@
 // Seleccionamos los iconos del DOM
 var coordenadas = document.getElementById('coordenadas');
 var tiempo_actu = document.getElementById('tiempo_actu');
-var boton_geo = document.getElementById('boton_geo')
+var boton_geo = document.getElementById('boton_geo');
+var boton_borrar = document.getElementById('boton_borrar');
 
 // Crea el mapa
 var map = L.map('map').setView([19.2907, -99.2141], 10);
@@ -25,10 +26,17 @@ var circulo
 var previo_marker = null
 var linea = null
 
+// Variable para guardar los puntos de GEOLOCALIZACION
+var ubicaciones = JSON.parse(localStorage.getItem('ubicaciones')) || [];
+
 // USO DE LA API DE GEOLOCALIZACION DE HTML5 ------ PARA ALGUNOS NAVEGADORES NO ESTA DISPONIBLE ESTA API
 if (!navigator.geolocation) { // Creamos la condicional para saber si el navegador acepta la API
     console.log('Tu navegador no tiene geolocalizacion disponible')
     boton_geo.disabled = true;
+}
+
+function borrarLocalStorage() {
+    localStorage.clear();
 }
 
 
@@ -56,6 +64,8 @@ function alternarObtencionCoordenadas() {
 
 // Agregar un event listener al botón para alternar la obtención de coordenadas
 boton_geo.addEventListener("click", alternarObtencionCoordenadas);
+// Borrar Local Storage
+boton_borrar.addEventListener("click", borrarLocalStorage);
 
 
 function obtenerPosicion(posicion) {
@@ -64,6 +74,17 @@ function obtenerPosicion(posicion) {
     latitud = posicion.coords.latitude
     longitid = posicion.coords.longitude
     exactitud = posicion.coords.accuracy
+
+    // Guardamos todos los valores en LOCALSTORAGE
+    let nuevaUbicacion = {
+        latitud: latitud,
+        longitid: longitid,
+        exactitud: exactitud
+    }
+
+    ubicaciones.push(nuevaUbicacion);
+
+    localStorage.setItem('ubicaciones', JSON.stringify(ubicaciones));
 
     if (circulo) {
         map.removeLayer(circulo)
