@@ -1,0 +1,116 @@
+// Seleccionamos los iconos del DOM
+var coordenadas = document.getElementById('coordenadas');
+var tiempo_actu = document.getElementById('tiempo_actu');
+var boton_geo = document.getElementById('boton_geo');
+var boton_borrar = document.getElementById('boton_borrar');
+
+// Crea el mapa
+var map = L.map('map').setView([19.2907, -99.2141], 10);
+
+// Crea la ubicacion usando OPENSTREETMAP
+L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 16,
+    attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+}).addTo(map);
+
+
+// Variables para el intervalo
+var actualizarMapa;
+// Variable para controlar la obtención de coordenadas
+var obteniendoCoordenadas = false;
+// Segundos 
+var tiempo = 5000
+
+// Variables para los marcadores
+var circulo
+var previo_marker = null
+var linea = null
+
+// Variable para guardar los puntos de GEOLOCALIZACION
+var ubicaciones = JSON.parse(localStorage.getItem('ubicaciones')) || [];
+
+// USO DE LA API DE GEOLOCALIZACION DE HTML5 ------ PARA ALGUNOS NAVEGADORES NO ESTA DISPONIBLE ESTA API
+if (!navigator.geolocation) { // Creamos la condicional para saber si el navegador acepta la API
+    console.log('Tu navegador no tiene geolocalizacion disponible')
+    boton_geo.disabled = true;
+}
+
+function borrarLocalStorage() {
+    localStorage.clear();
+}
+
+
+// Función para iniciar/detener la obtención de coordenadas
+function alternarObtencionCoordenadas() {
+    if (obteniendoCoordenadas) {
+        // Si ya se están obteniendo las coordenadas, detenerlo
+        clearInterval(actualizarMapa);
+
+        obteniendoCoordenadas = false;
+        boton_geo.textContent = 'Obtener Coordenadas'; // Cambiar el texto del botón
+        boton_geo.style.backgroundColor = 'rgb(41, 111, 233)' // Cambiar el color del boton
+
+    } else {
+        // Funcion que actualiza la ubucacion cada cierto tiempo
+        actualizarMapa = setInterval(() => {
+            navigator.geolocation.getCurrentPosition(obtenerPosicion)
+        }, tiempo);
+
+        obteniendoCoordenadas = true;
+        boton_geo.textContent = 'Detener Coordenadas'; // Cambiar el texto del botón
+        boton_geo.style.backgroundColor = 'rgb(233, 41, 89)' // Cambiar el color del boton
+    }
+}
+
+// Agregar un event listener al botón para alternar la obtención de coordenadas
+boton_geo.addEventListener("click", alternarObtencionCoordenadas);
+// Borrar Local Storage
+boton_borrar.addEventListener("click", borrarLocalStorage);
+
+
+function obtenerPosicion(posicion) {
+
+    // Obtenemos latitud, longitud y exactud del dispositivo mediante el Navegador
+    latitud = posicion.coords.latitude
+    longitid = posicion.coords.longitude
+    exactitud = posicion.coords.accuracy
+
+    // Guardamos todos los valores en LOCALSTORAGE
+    let nuevaUbicacion = {
+        latitud: latitud,
+        longitid: longitid,
+        exactitud: exactitud
+    }
+
+    ubicaciones.push(nuevaUbicacion);
+
+    localStorage.setItem('ubicaciones', JSON.stringify(ubicaciones));
+
+    if (circulo) {
+        map.removeLayer(circulo)
+    }
+
+    // Creamos los marcadores
+    var nuevo_marker = L.marker([latitud, longitid])
+    circulo = L.circle([latitud, longitid], { radius: exactitud })
+
+    // Pintamos los marcadores en el mapa
+    let grupoMarcadores = L.featureGroup([nuevo_marker, circulo]).addTo(map)
+    // Figamos el mapa para que se obtenga mejor visibilidad de la ubicacion en tiempo real
+    map.fitBounds(grupoMarcadores.getBounds())
+
+    // Si hay un marcador anterior, dibujar una línea desde el marcador anterior al nuevo marcador
+    if (previo_marker !== null) {
+        if (linea !== null) {
+            map.removeLayer(linea);
+        }
+        linea = L.polyline([previo_marker.getLatLng(), nuevo_marker.getLatLng()], { color: 'red' }).addTo(map);
+    }
+
+    // Actualizar el marcador anterior con el nuevo marcador
+    previo_marker = nuevo_marker;
+
+    // Imprimimos las Coordenadas en pantalla
+    coordenadas.textContent = 'Latitud: ' + latitud + ', ' + 'Longitud: ' + longitid + ', ' + 'Exactitud: ' + exactitud
+
+}
